@@ -1,0 +1,378 @@
+name: Conversion Request
+on:
+  issues:
+    types:
+      - labeled
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  get-pack-info:
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'conversion'
+    permissions:
+      issues: read
+    timeout-minutes: 2
+    outputs:
+      pack_url: ${{ steps.organize-inputs.outputs.PACK_URL }}
+      default_pack_url: ${{ steps.organize-inputs.outputs.DEFAULT_PACK_URL }}
+      merge_pack_url: ${{ steps.organize-inputs.outputs.MERGE_PACK_URL }}
+      default_assets_version: ${{ steps.organize-inputs.outputs.DEFAULT_ASSETS_VERSION }}
+      block_material: ${{ steps.organize-inputs.outputs.BLOCK_MATERIAL }}
+      attachable_material: ${{ steps.organize-inputs.outputs.ATTACHABLE_MATERIAL }}
+      archive_scratch: ${{ steps.organize-inputs.outputs.ARCHIVE_SCRATCH }}
+      rename_model_files: ${{ steps.organize-inputs.outputs.RENAME_MODEL_FILES }}
+      all_items_conversion: ${{ steps.organize-inputs.outputs.ALL_ITEMS_CONVERSION }}
+      all_items_non_offhand_conversion: ${{ steps.organize-inputs.outputs.ALL_ITEMS_NON_OFFHAND_CONVERSION }}
+      item_conversion: ${{ steps.organize-inputs.outputs.ITEM_CONVERSION}}
+      item_non_offhand_conversion: ${{ steps.organize-inputs.outputs.ITEM_NON_OFFHAND_CONVERSION}}
+      font_conversion: ${{ steps.organize-inputs.outputs.FONT_CONVERSION}}
+      armor_conversion: ${{ steps.organize-inputs.outputs.ARMOR_CONVERSION}}
+      bow_conversion: ${{ steps.organize-inputs.outputs.BOW_CONVERSION }}
+      bow_non_offhand_conversion: ${{ steps.organize-inputs.outputs.BOW_NON_OFFHAND_CONVERSION }}
+      crossbow_conversion: ${{ steps.organize-inputs.outputs.CROSSBOW_CONVERSION }}
+      crossbow_non_offhand_conversion: ${{ steps.organize-inputs.outputs.CROSSBOW_NON_OFFHAND_CONVERSION }}
+      shield_conversion: ${{ steps.organize-inputs.outputs.SHIELD_CONVERSION }}
+      other_conversion: ${{ steps.organize-inputs.outputs.OTHER_CONVERSION }}
+      block_conversion: ${{ steps.organize-inputs.outputs.BLOCK_CONVERSION }}
+      sound_conversion: ${{ steps.organize-inputs.outputs.SOUND_CONVERSION }}
+      animation_2d_conversion: ${{ steps.organize-inputs.outputs.ANIMATION_2D_CONVERSION }}
+      gui_conversion: ${{ steps.organize-inputs.outputs.GUI_CONVERSION }}
+      item_model: ${{ steps.organize-inputs.outputs.ITEM_MODEL }}
+      json_unicode_conversion: ${{ steps.organize-inputs.outputs.JSON_UNICODE_CONVERSION }}
+      encrypt_pack: ${{ steps.organize-inputs.outputs.ENCRYPT_PACK }}
+    steps:
+      - name: Issue Forms Body Parser
+        id: parse-issue
+        uses: zentered/issue-forms-body-parser@v2.2.0
+      - name: Parse Issue Body
+        id: parse-body
+        run: |
+          cat << 'EOF' > issue_body.txt
+          ${{ github.event.issue.body }}
+          EOF
+          
+          if grep -A 2 "All Items Conversion" issue_body.txt | grep -q "true"; then
+            echo "ALL_ITEMS=true" >> $GITHUB_OUTPUT
+          else
+            echo "ALL_ITEMS=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if grep -A 2 "Conversion Mappings V2" issue_body.txt | grep -q "true"; then
+            echo "ITEM_MODEL=true" >> $GITHUB_OUTPUT
+          else
+            echo "ITEM_MODEL=false" >> $GITHUB_OUTPUT
+          fi
+          
+          if grep -A 2 "2D Animation Conversion" issue_body.txt | grep -q "true"; then
+            echo "ANIMATION_2D=true" >> $GITHUB_OUTPUT
+          else
+            echo "ANIMATION_2D=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Organize Inputs
+        id: organize-inputs
+        run: |
+          echo ${{ toJSON(steps.parse-issue.outputs.data) }} | jq '
+          def test_input($input; $default):
+          if ($input == "*No response*" or $input == "None" or $input == "null") then $default else ($input | tostring | gsub("\\\\";""))  end;
+          
+          def parse_checkboxes($field):
+          if $field.list then
+            ([$field.list[] | select(.checked == true) | .text] | join(","))
+          else
+            "false"
+          end;
+          
+          {
+            "pack_url": .["java-pack-direct-download-url"].text[1:-1],
+            "default_pack_url": test_input(.["default-pack-direct-download-url"].text; " null ")[1:-1],
+            "merge_pack_url": test_input(.["bedrock-merge-pack-direct-download-url"].text; " null ")[1:-1],
+            "default_assets_version": test_input(.["default-assets-version"].text; "1.21"),
+            "block_material": test_input(.["block-material"].text; "alpha_test"),
+            "attachable_material": test_input(.["attachable-material"].text; "entity_alphatest_one_sided"),
+            "archive_scratch": test_input(.["archive-scratch"].text; "false"),
+            "rename_model_files": test_input(.["rename-model-files"].text; "false"),
+            "all_items_conversion": (if (.["all-items-conversion"].text | tostring) == "true" then "true" else "false" end),
+            "all_items_non_offhand_conversion": (if (.["all-items-conversion"].text | tostring | contains("non-offhand")) then "true" else "false" end),
+            "item_conversion": (if (.["item-conversion"].text | tostring) == "true" then "true" else "false" end),
+            "item_non_offhand_conversion": (if (.["item-conversion"].text | tostring | contains("non-offhand")) then "true" else "false" end),
+            "font_conversion": test_input(.["font-conversion"].text; "false"),
+            "armor_conversion": test_input(.["armor-conversion"].text; "false"),
+            "bow_conversion": (if (.["bow-conversion"].text | tostring) == "true" then "true" else "false" end),
+            "bow_non_offhand_conversion": (if (.["bow-conversion"].text | tostring | contains("non-offhand")) then "true" else "false" end),
+            "crossbow_conversion": (if (.["crossbow-conversion"].text | tostring) == "true" then "true" else "false" end),
+            "crossbow_non_offhand_conversion": (if (.["crossbow-conversion"].text | tostring | contains("non-offhand")) then "true" else "false" end),
+            "shield_conversion": (if (.["shield-conversion"].text | tostring) == "true" then "true" else "false" end),
+            "other_conversion": parse_checkboxes(.["other-conversion"]),
+            "block_conversion": test_input(.["block-conversion"].text; "false"),
+            "sound_conversion": test_input(.["sound-conversion"].text; "false"),
+            "animation_2d_conversion": test_input(.["animation-2d-conversion"].text; "false"),
+            "gui_conversion": test_input(.["gui-conversion"].text; "false"),
+            "item_model": (if (.["itemmodel"].text | tostring) == "true" then "true" else "false" end),
+            "json_unicode_conversion": test_input(.["json-unicode-conversion"].text; "false"),
+            "encrypt_pack": test_input(.["encrypt-pack"].text; "false")
+          }' > inputs.json
+          
+          # Override with direct parse from issue body
+          ITEM_MODEL_DIRECT="${{ steps.parse-body.outputs.ITEM_MODEL }}"
+          if [ "$ITEM_MODEL_DIRECT" == "true" ]; then
+            jq '.item_model = "true"' inputs.json > inputs_temp.json
+            mv inputs_temp.json inputs.json
+          fi
+          
+          ALL_ITEMS_DIRECT="${{ steps.parse-body.outputs.ALL_ITEMS }}"
+          if [ "$ALL_ITEMS_DIRECT" == "true" ]; then
+            jq '.all_items_conversion = "true"' inputs.json > inputs_temp.json
+            mv inputs_temp.json inputs.json
+          fi
+          
+          ANIMATION_2D_DIRECT="${{ steps.parse-body.outputs.ANIMATION_2D }}"
+          if [ "$ANIMATION_2D_DIRECT" == "true" ]; then
+            jq '.animation_2d_conversion = "true"' inputs.json > inputs_temp.json
+            mv inputs_temp.json inputs.json
+          fi
+          
+          echo "PACK_URL=$(jq -r '.pack_url' inputs.json)" >> $GITHUB_OUTPUT
+          echo "DEFAULT_PACK_URL=$(jq -r '.default_pack_url' inputs.json)" >> $GITHUB_OUTPUT
+          echo "MERGE_PACK_URL=$(jq -r '.merge_pack_url' inputs.json)" >> $GITHUB_OUTPUT
+          echo "DEFAULT_ASSETS_VERSION=$(jq -r '.default_assets_version' inputs.json)" >> $GITHUB_OUTPUT
+          echo "BLOCK_MATERIAL=$(jq -r '.block_material' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ATTACHABLE_MATERIAL=$(jq -r '.attachable_material' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ARCHIVE_SCRATCH=$(jq -r '.archive_scratch' inputs.json)" >> $GITHUB_OUTPUT
+          echo "RENAME_MODEL_FILES=$(jq -r '.rename_model_files' inputs.json)" >> $GITHUB_OUTPUT
+          echo "FONT_CONVERSION=$(jq -r '.font_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ALL_ITEMS_CONVERSION=$(jq -r '.all_items_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ALL_ITEMS_NON_OFFHAND_CONVERSION=$(jq -r '.all_items_non_offhand_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ITEM_CONVERSION=$(jq -r '.item_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ITEM_NON_OFFHAND_CONVERSION=$(jq -r '.item_non_offhand_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ARMOR_CONVERSION=$(jq -r '.armor_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "BOW_CONVERSION=$(jq -r '.bow_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "BOW_NON_OFFHAND_CONVERSION=$(jq -r '.bow_non_offhand_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "CROSSBOW_CONVERSION=$(jq -r '.crossbow_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "CROSSBOW_NON_OFFHAND_CONVERSION=$(jq -r '.crossbow_non_offhand_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "SHIELD_CONVERSION=$(jq -r '.shield_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "OTHER_CONVERSION=$(jq -r '.other_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "BLOCK_CONVERSION=$(jq -r '.block_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "SOUND_CONVERSION=$(jq -r '.sound_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ANIMATION_2D_CONVERSION=$(jq -r '.animation_2d_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "GUI_CONVERSION=$(jq -r '.gui_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ITEM_MODEL=$(jq -r '.item_model' inputs.json)" >> $GITHUB_OUTPUT
+          echo "JSON_UNICODE_CONVERSION=$(jq -r '.json_unicode_conversion' inputs.json)" >> $GITHUB_OUTPUT
+          echo "ENCRYPT_PACK=$(jq -r '.encrypt_pack' inputs.json)" >> $GITHUB_OUTPUT
+          
+  generate-icons:
+    runs-on: ubuntu-latest
+    needs: get-pack-info
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Cache tools node_modules
+        uses: actions/cache@v4
+        with:
+          path: tools/node_modules
+          key: ${{ runner.os }}-tools-${{ hashFiles('tools/package.json') }}
+      - name: Install icon generator dependencies
+        run: |
+          cd tools
+          npm install
+          cd ..
+      - name: Install Puppeteer Chromium
+        run: |
+          npx puppeteer browsers install chrome
+      - name: Download and prepare pack
+        env:
+          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
+        run: |
+          mkdir -p pack
+          curl -#L -o input_pack.zip "${PACK_URL}"
+          unzip -q input_pack.zip -d pack/
+      - name: Generate icons
+        run: |
+          mkdir -p staging/target/rp/textures
+          node tools/generate-simple.js || echo "Icon generation failed, continuing..."
+      - name: Upload generated icons
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generated-icons
+          path: staging/target/rp/textures/
+          retention-days: 1
+          if-no-files-found: warn
+          
+  convert-pack:
+    runs-on: ubuntu-latest
+    needs: get-pack-info
+    permissions:
+      contents: read
+    timeout-minutes: 90
+    outputs:
+      run_id: ${{ steps.get-pack-info.outputs.pack_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Enable default asset cache
+        id: cache-default-assets
+        uses: actions/cache@v4
+        with:
+          path: staging/default_assets.zip
+          key: ${{ runner.os }}-default-assets-${{ needs.get-pack-info.outputs.default_assets_version }}
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y moreutils zip unzip imagemagick
+          yarn global add spritesheet-js
+          pip install Pillow requests jproperties pyyaml
+      - name: Convert Pack
+        id: convert-pack
+        continue-on-error: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
+          DEFAULT_PACK_URL: ${{ needs.get-pack-info.outputs.default_pack_url }}
+          MERGE_PACK_URL: ${{ needs.get-pack-info.outputs.merge_pack_url }}
+          DEFAULT_ASSETS_VERSION: ${{ needs.get-pack-info.outputs.default_assets_version }}
+          BLOCK_MATERIAL: ${{ needs.get-pack-info.outputs.block_material }}
+          ATTACHABLE_MATERIAL: ${{ needs.get-pack-info.outputs.attachable_material }}
+          ARCHIVE_SCRATCH: ${{ needs.get-pack-info.outputs.archive_scratch }}
+          RENAME_MODEL_FILES: ${{ needs.get-pack-info.outputs.rename_model_files }}
+          ALL_ITEMS_CONVERSION: ${{ needs.get-pack-info.outputs.all_items_conversion }}
+          ALL_ITEMS_NON_OFFHAND_CONVERSION: ${{ needs.get-pack-info.outputs.all_items_non_offhand_conversion }}
+          ITEM_CONVERSION: ${{ needs.get-pack-info.outputs.item_conversion }}
+          ITEM_NON_OFFHAND_CONVERSION: ${{ needs.get-pack-info.outputs.item_non_offhand_conversion }}
+          FONT_CONVERSION: ${{ needs.get-pack-info.outputs.font_conversion }}
+          ARMOR_CONVERSION: ${{ needs.get-pack-info.outputs.armor_conversion }}
+          BOW_CONVERSION: ${{ needs.get-pack-info.outputs.bow_conversion }}
+          BOW_NON_OFFHAND_CONVERSION: ${{ needs.get-pack-info.outputs.bow_non_offhand_conversion }}
+          CROSSBOW_CONVERSION: ${{ needs.get-pack-info.outputs.crossbow_conversion }}
+          CROSSBOW_NON_OFFHAND_CONVERSION: ${{ needs.get-pack-info.outputs.crossbow_non_offhand_conversion }}
+          SHIELD_CONVERSION: ${{ needs.get-pack-info.outputs.shield_conversion }}
+          OTHER_CONVERSION: ${{ needs.get-pack-info.outputs.other_conversion }}
+          BLOCK_CONVERSION: ${{ needs.get-pack-info.outputs.block_conversion }}
+          SOUND_CONVERSION: ${{ needs.get-pack-info.outputs.sound_conversion }}
+          ANIMATION_2D_CONVERSION: ${{ needs.get-pack-info.outputs.animation_2d_conversion }}
+          GUI_CONVERSION: ${{ needs.get-pack-info.outputs.gui_conversion }}
+          ITEM_MODEL: ${{ needs.get-pack-info.outputs.item_model }}
+          JSON_UNICODE_CONVERSION: ${{ needs.get-pack-info.outputs.json_unicode_conversion }}
+          ENCRYPT_PACK: ${{ needs.get-pack-info.outputs.encrypt_pack }}
+        run: |
+          mkdir -p staging
+          mkdir -p staging/other
+          cp kaito.sh staging/
+          cp *.py staging/
+          cp other/*.py staging/other/
+          mkdir -p staging/animations
+          cp animations/anim_2d.py staging/animations/
+          cp animations/anim_3d.py staging/animations/
+          mkdir -p staging/tools
+          cp -r tools/* staging/tools/
+          cd staging
+          chmod +x kaito.sh
+          COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o input_pack.zip "${PACK_URL}"
+          MERGE_PACK_FILE="${MERGE_PACK_URL}"
+          if [ "${MERGE_PACK_URL}" != "null" ]; then
+            COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o merge_pack.zip "${MERGE_PACK_URL}"
+            MERGE_PACK_FILE="merge_pack.zip"
+          fi
+          ./kaito.sh input_pack.zip -w "false" -m ${MERGE_PACK_FILE} -a ${ATTACHABLE_MATERIAL} -b ${BLOCK_MATERIAL} -f ${DEFAULT_PACK_URL} -v ${DEFAULT_ASSETS_VERSION} -r ${RENAME_MODEL_FILES} -s ${ARCHIVE_SCRATCH}
+          
+          # Encryption after conversion
+          if [ "${ENCRYPT_PACK}" = "true" ]; then
+            python other/encrypt.py bedrock.mcpack campfire_encrypted.mcpack || exit 1
+            if [ -f "campfire_encrypted.mcpack" ]; then
+              rm -f bedrock.mcpack
+              mv campfire_encrypted.mcpack campfire.mcpack
+              mv campfire_encrypted_key.txt campfire.mcpack.key
+            else
+              exit 1
+            fi
+          fi
+      - name: Upload converted pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bedrock-${{ github.event.issue.number }}
+          path: |
+            staging/bedrock.mcpack
+            staging/campfire.mcpack.key
+            staging/bedrock/
+            staging/*.json
+      - name: Delete generated-icons artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: generated-icons
+        continue-on-error: true
+  post-result:
+    runs-on: ubuntu-latest
+    needs: convert-pack
+    timeout-minutes: 2
+    permissions:
+      issues: write
+    steps:
+      - name: Post Result
+        id: post-result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## :sparkles: The run has finished! :sparkles:
+            - Download the pack files from the [action run][1] page. :arrow_double_down:
+            - Upload the resource pack `campfire.mcpack` to the `packs` folder of your Geyser folder. :file_folder:
+            - Upload the mappings file `mappings.json` to the `custom_mappings` folder of your Geyser folder. :page_with_curl:
+            - If encryption was enabled, you'll also find `campfire.mcpack.key` file containing the encryption key. :key:
+
+            If you notice issues with the converted files, please refer to the action log for errors and open a bug report if you believe there is an issue with the converter. This issue will be closed automatically.
+
+            [1]: https://github.com/Huydzvaidai/bedrock-2/actions/runs/${{ github.run_id}}
+          reactions: 'rocket'
+
+      - name: Close Issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+  conversion-failed:
+    runs-on: ubuntu-latest
+    needs: [get-pack-info, convert-pack, post-result]
+    if: always() && (needs.get-pack-info.result == 'failure' || needs.convert-pack.result == 'failure' || needs.convert-pack.result == 'post-result')
+    timeout-minutes: 2
+    permissions:
+      issues: write
+    steps:
+      - name: Post Result
+        id: post-result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## :stop_sign: The run has failed :stop_sign:
+            - Check the [action run][1] page for errors. :clipboard:
+            - Status by job:
+              - Get Pack Info: *${{ needs.get-pack-info.result }}*
+              - Convert Pack: *${{ needs.convert-pack.result }}*
+              - Post Result: *${{ needs.post-result.result }}*
+
+            If you believe this is an issue with the converter. please open a bug report. This issue will be closed automatically.
+
+            [1]: https://github.com/Huydzvaidai/bedrock-2/actions/runs/${{ github.run_id}}
+          reactions: 'x'
+      - name: Close issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
