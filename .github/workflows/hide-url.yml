@@ -1,17 +1,15 @@
-name: Hide URL on Open
+name: Hide URL
 on:
   issues:
     types:
       - opened
-      - closed
 
 jobs:
   hide-url:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      actions: write
-    timeout-minutes: 25
+    timeout-minutes: 5
     steps:
       - name: Hide sensitive form data
         uses: actions/github-script@v7
@@ -33,27 +31,4 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
               body: body
-            });
-      - name: Delete workflow run after 1 minute
-        if: github.event.action == 'closed'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await new Promise(r => setTimeout(r, 1 * 60 * 1000));
-
-            // Chờ run hoàn thành trước khi xóa
-            for (let i = 0; i < 100; i++) {
-              const run = await github.rest.actions.getWorkflowRun({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: context.runId
-              });
-              if (run.data.status === 'completed') break;
-              await new Promise(r => setTimeout(r, 10000));
-            }
-
-            await github.rest.actions.deleteWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId
             });
