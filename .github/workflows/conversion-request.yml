@@ -380,3 +380,47 @@ jobs:
         uses: peter-evans/close-issue@v3
         with:
           issue-number: ${{ github.event.issue.number }}
+
+  hide-sensitive-data:
+    runs-on: ubuntu-latest
+    needs: [post-result, conversion-failed]
+    if: always()
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      actions: write
+    steps:
+      - name: Hide sensitive form data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            let body = issue.data.body;
+            if (!body) return;
+
+            // Ẩn tất cả URL (http/https)
+            body = body.replace(/https?:\/\/[^\s\n]+/g, '[hidden]');
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+      - name: Delete workflow run after 2 minutes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await new Promise(r => setTimeout(r, 2 * 60 * 1000));
+            await github.rest.actions.deleteWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
