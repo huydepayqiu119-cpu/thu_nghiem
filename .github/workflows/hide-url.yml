@@ -1,4 +1,5 @@
 name: Hide URL
+run-name: Hide URL
 on:
   issues:
     types:
