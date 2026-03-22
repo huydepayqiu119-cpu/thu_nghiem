@@ -1,7 +1,7 @@
 name: Remove
 on:
   workflow_run:
-    workflows: ["Conversion Request", "Hide URL"]
+    workflows: ["Conversion Request"]
     types:
       - completed
 
