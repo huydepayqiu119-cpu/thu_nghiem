@@ -170,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: huydepayqiu119-cpu/sjkadjksdhsajdhskdhasdjawerwe
+          repository: huydepayqiu119-cpu/tools-thu-nghiem
           token: ${{ secrets.TOOLS_PAT }}
           fetch-depth: 1
       - name: Install NodeJS
@@ -221,7 +221,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: huydepayqiu119-cpu/sjkadjksdhsajdhskdhasdjawerwe
+          repository: huydepayqiu119-cpu/tools-thu-nghiem
           token: ${{ secrets.TOOLS_PAT }}
           fetch-depth: 1
       - name: Enable default asset cache
