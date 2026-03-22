@@ -1,0 +1,33 @@
+name: Hide URL on Open
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  hide-url:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Hide sensitive form data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            let body = issue.data.body;
+            if (!body) return;
+
+            body = body.replace(/https?:\/\/[^\s\n]+/g, '[hidden]');
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
