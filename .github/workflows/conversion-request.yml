@@ -240,7 +240,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          sudo apt-get install -y moreutils zip unzip imagemagick
+          sudo apt-get install -y moreutils zip unzip imagemagick ffmpeg
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
       - name: Convert Pack
