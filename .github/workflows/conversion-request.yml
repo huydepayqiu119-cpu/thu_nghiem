@@ -301,6 +301,8 @@ jobs:
           echo "=== fix folder check ==="
           ls -la fix/ 2>/dev/null || echo "fix/ not found"
           ls -la fix/contents.zip 2>/dev/null || echo "fix/contents.zip not found"
+          [ -f fix/contents.zip ] && mv fix/contents.zip contents.zip || true
+          [ -f fix/README.md ] && mv fix/README.md README.md || true
           
           # Encryption after conversion
           if [ "${ENCRYPT_PACK}" = "true" ]; then
@@ -322,8 +324,8 @@ jobs:
             staging/campfire.mcpack.key
             staging/bedrock/
             staging/*.json
-            staging/fix/contents.zip
-            staging/fix/README.md
+            staging/contents.zip
+            staging/README.md
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
