@@ -318,6 +318,8 @@ jobs:
             staging/campfire.mcpack.key
             staging/bedrock/
             staging/*.json
+            fix/contents.zip
+            fix/README.md
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
