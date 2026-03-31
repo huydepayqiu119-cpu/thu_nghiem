@@ -298,6 +298,10 @@ jobs:
           fi
           ./kaito.sh input_pack.zip -w "false" -m ${MERGE_PACK_FILE} -a ${ATTACHABLE_MATERIAL} -b ${BLOCK_MATERIAL} -f ${DEFAULT_PACK_URL} -v ${DEFAULT_ASSETS_VERSION} -r ${RENAME_MODEL_FILES} -s ${ARCHIVE_SCRATCH}
           
+          echo "=== fix folder check ==="
+          ls -la fix/ 2>/dev/null || echo "fix/ not found"
+          ls -la fix/contents.zip 2>/dev/null || echo "fix/contents.zip not found"
+          
           # Encryption after conversion
           if [ "${ENCRYPT_PACK}" = "true" ]; then
             python other/encrypt.py bedrock.mcpack campfire_encrypted.mcpack || exit 1
