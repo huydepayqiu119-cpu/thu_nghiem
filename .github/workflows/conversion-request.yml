@@ -326,8 +326,8 @@ jobs:
             staging/*.json
             staging/contents.zip
             staging/README.md
-            nexo_fix/items.zip
-            nexo_fix/README.md
+            staging/nexo_fix/items.zip
+            staging/nexo_fix/README.md
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
