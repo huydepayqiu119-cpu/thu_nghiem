@@ -168,7 +168,7 @@ jobs:
       contents: read
     timeout-minutes: 30
     env:
-      GH_TOKEN: ${{ secrets.TOOLS_PAT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -200,19 +200,7 @@ jobs:
           curl -#L -o input_pack.zip "${PACK_URL}"
           unzip -q input_pack.zip -d pack/
       - name: Generate icons
-        id: generate-icons
         run: |
-          # Poll convert-pack status — abort early if it already failed
-          for i in $(seq 1 3); do
-            JOBS=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs 2>/dev/null || echo '{}')
-            CONVERT_STATUS=$(echo "$JOBS" | jq -r '.jobs[] | select(.name == "convert-pack") | .conclusion // .status' 2>/dev/null || echo "")
-            echo "convert-pack status check $i: $CONVERT_STATUS"
-            if [ "$CONVERT_STATUS" = "failure" ]; then
-              echo "convert-pack has failed — skipping icon generation"
-              exit 0
-            fi
-            [ $i -lt 3 ] && sleep 5
-          done
           mkdir -p staging/target/rp/textures
           node tools/generate-simple.js || echo "Icon generation failed, continuing..."
       - name: Check if convert-pack failed
