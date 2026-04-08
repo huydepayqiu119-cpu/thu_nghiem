@@ -258,6 +258,21 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --fix-missing moreutils zip unzip imagemagick
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
+      - name: Download generated icons
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: generated-icons
+          path: staging/icons-tmp
+      - name: Extract generated icons
+        run: |
+          if [ -f staging/icons-tmp/generated-icons.zip ]; then
+            mkdir -p staging/target/rp
+            unzip -o staging/icons-tmp/generated-icons.zip -d staging/target/rp/
+            echo "Icons extracted successfully"
+          else
+            echo "No generated-icons artifact found, skipping"
+          fi
       - name: Convert Pack
         id: convert-pack
         continue-on-error: false
