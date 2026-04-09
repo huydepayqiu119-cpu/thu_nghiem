@@ -336,7 +336,7 @@ jobs:
           name: Bedrock-${{ github.event.issue.number }}
           path: |
             staging/bedrock.mcpack
-            staging/campfire.mcpack.key
+            staging/campfire.log
             staging/bedrock/
             staging/*.json
             staging/contents.zip
