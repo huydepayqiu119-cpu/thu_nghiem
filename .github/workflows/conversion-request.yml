@@ -335,13 +335,14 @@ jobs:
         with:
           name: Bedrock-${{ github.event.issue.number }}
           path: |
-            staging/bedrock.mcpack
+            staging/*.mcpack
             staging/campfire.log
             staging/bedrock/
             staging/*.json
             staging/contents.zip
             staging/README.md
             staging/items.zip
+            staging/*.jar
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
