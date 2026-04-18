@@ -345,6 +345,7 @@ jobs:
             staging/README/*.jar
             staging/README/*.md
             staging/README/*.mcpack
+            staging/README/geyserdisplayentity
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
