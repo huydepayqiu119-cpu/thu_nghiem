@@ -297,8 +297,8 @@ jobs:
           mkdir -p staging/other
           cp kaito.sh staging/
           cp *.py staging/
-          cp list.json staging/
           cp other/*.py staging/other/
+          cp other/list.json staging/other/
           mkdir -p staging/animations
           cp animations/anim_2d.py staging/animations/
           cp animations/anim_3d.py staging/animations/
