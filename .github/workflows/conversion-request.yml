@@ -304,8 +304,6 @@ jobs:
           cp animations/anim_3d.py staging/animations/
           mkdir -p staging/tools
           cp -r tools/* staging/tools/
-          mkdir -p staging/util
-          cp -r util/* staging/util/ 2>/dev/null || true
           cd staging
           chmod +x kaito.sh
           COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o input_pack.zip "${PACK_URL}"
