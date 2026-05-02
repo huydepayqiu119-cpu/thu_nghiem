@@ -344,12 +344,10 @@ jobs:
             staging/bedrock/
             staging/*.json
             staging/contents.zip
+            staging/meg4.zip
             staging/README.md
             staging/items.zip
-            staging/DisplayEntity (README)/*.jar
-            staging/DisplayEntity (README)/*.md
-            staging/DisplayEntity (README)/*.mcpack
-            staging/DisplayEntity (README)/geyserdisplayentity
+            staging/DisplayEntity (README)/**
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
