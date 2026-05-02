@@ -299,6 +299,7 @@ jobs:
           mkdir -p staging/other
           cp kaito.sh staging/
           cp *.py staging/
+          cp meg4.js staging/
           cp other/*.py staging/other/
           cp other/list.json staging/other/
           mkdir -p staging/animations
