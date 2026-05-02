@@ -349,6 +349,7 @@ jobs:
             staging/README.md
             staging/items.zip
             staging/DisplayEntity (README)/**
+            staging/meg4_debug_*.png
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
