@@ -260,6 +260,7 @@ jobs:
           pip install Pillow requests jproperties pyyaml
           npm install playwright
           npx playwright install chromium --with-deps
+          npm install adm-zip
       - name: Convert Pack
         id: convert-pack
         continue-on-error: false
