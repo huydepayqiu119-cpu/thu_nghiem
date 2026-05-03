@@ -255,7 +255,7 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y --fix-missing moreutils zip unzip imagemagick xvfb mesa-utils libgl1-mesa-dri libgl1-mesa-glx libglu1-mesa
+          sudo apt-get update && sudo apt-get install -y --fix-missing moreutils zip unzip imagemagick xvfb mesa-utils libgl1-mesa-dri libglu1-mesa
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
           npm install puppeteer
