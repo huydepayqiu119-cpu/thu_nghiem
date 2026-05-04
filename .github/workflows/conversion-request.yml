@@ -256,7 +256,8 @@ jobs:
       - name: Run meg4 export
         run: |
           mkdir -p staging
-          xvfb-run --auto-servernum node tools/meg4.js || echo "meg4 export failed, continuing..."
+          xvfb-run --auto-servernum node meg4.js || echo "meg4 export failed, continuing..."
+        working-directory: tools
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
         with:
