@@ -225,9 +225,51 @@ jobs:
           retention-days: 1
           if-no-files-found: warn
           
-  convert-pack:
+  meg4-export:
     runs-on: ubuntu-latest
     needs: get-pack-info
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: huydepayqiu119-cpu/tools-thu-nghiem
+          token: ${{ secrets.TOOLS_PAT }}
+          fetch-depth: 1
+      - name: Install NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y --fix-missing xvfb mesa-utils libgl1-mesa-dri libglu1-mesa
+          npm install playwright adm-zip
+          npx playwright install chromium --with-deps
+      - name: Download and prepare pack
+        env:
+          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
+        run: |
+          mkdir -p pack
+          curl -#L -o input_pack.zip "${PACK_URL}"
+          unzip -q input_pack.zip -d pack/
+      - name: Run meg4 export
+        run: |
+          mkdir -p staging
+          xvfb-run --auto-servernum node tools/meg4.js || echo "meg4 export failed, continuing..."
+      - name: Upload meg4 output
+        uses: actions/upload-artifact@v4
+        with:
+          name: meg4-output
+          path: |
+            staging/meg4.zip
+            staging/meg4_debug_*.png
+          retention-days: 1
+          if-no-files-found: warn
+
+  convert-pack:
+    runs-on: ubuntu-latest
+    needs: [get-pack-info, meg4-export]
     permissions:
       contents: read
     timeout-minutes: 90
@@ -255,12 +297,15 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y --fix-missing moreutils zip unzip imagemagick xvfb mesa-utils libgl1-mesa-dri libglu1-mesa
+          sudo apt-get install -y moreutils zip unzip imagemagick
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
-          npm install playwright
-          npx playwright install chromium --with-deps
-          npm install adm-zip
+      - name: Download meg4 output
+        uses: actions/download-artifact@v4
+        with:
+          name: meg4-output
+          path: staging/
+        continue-on-error: true
       - name: Convert Pack
         id: convert-pack
         continue-on-error: false
