@@ -263,30 +263,56 @@ jobs:
         run: |
           mkdir -p staging
           
-          # Zip blueprints directory
+          # Debug: Check pack structure
+          echo "=== Pack structure ==="
+          find pack -type d -name "blueprints" -o -name "beta" | head -20
+          echo ""
+          echo "=== Looking for .bbmodel files ==="
+          find pack -name "*.bbmodel" | head -10
+          echo ""
+          
+          # Find the actual blueprints directory with .bbmodel files
           if [ -d "pack/blueprints" ]; then
-            cd pack
-            zip -r ../blueprints.zip blueprints
-            cd ..
+            # Check if there are .bbmodel files directly in pack/blueprints subdirs
+            BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
+            echo "Found $BBMODEL_COUNT .bbmodel files in pack/blueprints"
             
-            # Call API
-            echo "Calling MEG4 API at ${MEG4_API_URL}..."
-            curl -X POST "${MEG4_API_URL}/api/meg4/export" \
-              -F "blueprints=@blueprints.zip" \
-              -o staging/meg4.zip \
-              --max-time 600 \
-              --retry 2 \
-              -v
-            
-            if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
-              echo "✓ MEG4 export completed successfully"
-              ls -lh staging/meg4.zip
+            if [ "$BBMODEL_COUNT" -gt 0 ]; then
+              # Zip only the subdirectories (like beta/) not the blueprints folder itself
+              cd pack/blueprints
+              
+              # List what we're about to zip
+              echo "=== Contents to zip ==="
+              ls -la
+              
+              # Zip all subdirectories
+              zip -r ../../blueprints.zip * -x "*.DS_Store"
+              cd ../..
+              
+              echo "=== Blueprints.zip contents ==="
+              unzip -l blueprints.zip | head -20
+              
+              # Call API
+              echo "Calling MEG4 API at ${MEG4_API_URL}..."
+              curl -X POST "${MEG4_API_URL}/api/meg4/export" \
+                -F "blueprints=@blueprints.zip" \
+                -o staging/meg4.zip \
+                --max-time 600 \
+                --retry 2 \
+                -v
+              
+              if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
+                echo "✓ MEG4 export completed successfully"
+                ls -lh staging/meg4.zip
+              else
+                echo "✗ MEG4 export failed or returned empty file"
+              fi
+              
+              # Cleanup
+              rm -f blueprints.zip
             else
-              echo "✗ MEG4 export failed or returned empty file"
+              echo "No .bbmodel files found in pack/blueprints"
             fi
-            
-            # Cleanup
-            rm -f blueprints.zip
           else
             echo "No blueprints directory found, skipping MEG4 export"
           fi
