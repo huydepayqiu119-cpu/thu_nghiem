@@ -245,9 +245,9 @@ jobs:
         env:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
-          mkdir -p pack
+          mkdir -p pack staging
           
-          # Fix Dropbox URL - change dl=0 to dl=1 for direct download
+          # Fix Dropbox URL
           downloadUrl="${PACK_URL/dl=0/dl=1}"
           echo "Downloading from: $downloadUrl"
           
@@ -257,73 +257,55 @@ jobs:
           # Extract
           unzip -q input_pack.zip -d pack
           echo "Extraction successful"
-      - name: Run meg4 export via API
-        env:
-          MEG4_API_URL: ${{ secrets.MEG4_API_URL }}
+      - name: Install dependencies
         run: |
-          mkdir -p staging
-          
-          # Debug: Check pack structure
-          echo "=== Pack structure ==="
-          find pack -type d -name "blueprints" -o -name "beta" | head -20
-          echo ""
-          echo "=== Looking for .bbmodel files ==="
-          find pack -name "*.bbmodel" | head -10
-          echo ""
-          
-          # Find the actual blueprints directory with .bbmodel files
+          npm install puppeteer@24.15.0 adm-zip jszip
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2 \
+            libatspi2.0-0
+      - name: Run MEG4 export
+        run: |
           if [ -d "pack/blueprints" ]; then
-            # Check if there are .bbmodel files directly in pack/blueprints subdirs
             BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
-            echo "Found $BBMODEL_COUNT .bbmodel files in pack/blueprints"
+            echo "Found $BBMODEL_COUNT .bbmodel files"
             
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
-              # Zip only the subdirectories (like beta/) not the blueprints folder itself
-              cd pack/blueprints
-              
-              # List what we're about to zip
-              echo "=== Contents to zip ==="
-              ls -la
-              
-              # Zip all subdirectories
-              zip -r ../../blueprints.zip * -x "*.DS_Store"
-              cd ../..
-              
-              echo "=== Blueprints.zip contents ==="
-              unzip -l blueprints.zip | head -20
-              
-              # Call API
-              echo "Calling MEG4 API at ${MEG4_API_URL}..."
-              curl -X POST "${MEG4_API_URL}/api/meg4/export" \
-                -F "blueprints=@blueprints.zip" \
-                -o staging/meg4.zip \
-                --max-time 600 \
-                --retry 2 \
-                -v
+              echo "Running MEG4 export..."
+              node meg4_web.js pack/blueprints staging/meg4.zip
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
                 ls -lh staging/meg4.zip
               else
-                echo "✗ MEG4 export failed or returned empty file"
+                echo "✗ MEG4 export failed"
               fi
-              
-              # Cleanup
-              rm -f blueprints.zip
             else
-              echo "No .bbmodel files found in pack/blueprints"
+              echo "No .bbmodel files found"
             fi
           else
-            echo "No blueprints directory found, skipping MEG4 export"
+            echo "No blueprints directory found"
           fi
         continue-on-error: true
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
         with:
           name: meg4-output
-          path: |
-            staging/meg4.zip
-            staging/meg4_debug_*.png
+          path: staging/meg4.zip
           retention-days: 1
           if-no-files-found: warn
 
