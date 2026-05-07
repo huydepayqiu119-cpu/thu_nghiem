@@ -243,7 +243,7 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: |
-          npm install puppeteer adm-zip
+          npm install adm-zip
       - name: Download and prepare pack
         
         env:
@@ -264,7 +264,7 @@ jobs:
       - name: Run meg4 export
         run: |
           mkdir -p staging
-          node meg4_web.js
+          node meg4_pure.js
         continue-on-error: true
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
