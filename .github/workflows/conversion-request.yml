@@ -241,11 +241,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: 'npm'
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
       - name: Install dependencies
         shell: pwsh
         run: |
           npm install playwright adm-zip
-          npx playwright install chromium --with-deps
+          npx playwright install chromium
       - name: Download and prepare pack
         shell: pwsh
         env:
