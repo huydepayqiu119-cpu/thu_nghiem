@@ -268,7 +268,7 @@ jobs:
             
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
               echo "Running MEG4 export via API..."
-              node meg4_api_client.js pack/blueprints staging/meg4.zip http://thunder.pikamc.vn:25164/export
+              node meg4_api_client.js pack/blueprints staging/meg4.zip http://thunder.pikamc.vn:25166/export
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
