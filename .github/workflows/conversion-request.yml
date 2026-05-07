@@ -226,7 +226,7 @@ jobs:
           if-no-files-found: warn
           
   meg4-export:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: get-pack-info
     permissions:
       contents: read
@@ -242,30 +242,29 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
-        shell: pwsh
         run: |
           npm install playwright adm-zip
       - name: Download and prepare pack
-        shell: pwsh
+        
         env:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
-          New-Item -ItemType Directory -Force -Path pack
+          mkdir -p pack
           
           # Fix Dropbox URL - change dl=0 to dl=1 for direct download
-          $downloadUrl = $env:PACK_URL -replace 'dl=0$', 'dl=1'
-          Write-Host "Downloading from: $downloadUrl"
+          downloadUrl="${PACK_URL/dl=0/dl=1}"
+          echo "Downloading from: $downloadUrl"
           
-          Invoke-WebRequest -Uri $downloadUrl -OutFile input_pack.zip -UseBasicParsing
-          Write-Host "Downloaded file size: $((Get-Item input_pack.zip).Length) bytes"
+          curl -L "$downloadUrl" -o input_pack.zip
+          echo "Downloaded file size: $(stat -c%s input_pack.zip) bytes"
           
           # Extract
-          Expand-Archive -Path input_pack.zip -DestinationPath pack -Force
-          Write-Host "Extraction successful"
+          unzip -q input_pack.zip -d pack
+          echo "Extraction successful"
       - name: Run meg4 export
-        shell: pwsh
+        
         run: |
-          New-Item -ItemType Directory -Force -Path staging
+          mkdir -p staging
           node meg4.js
         continue-on-error: true
       - name: Upload meg4 output
