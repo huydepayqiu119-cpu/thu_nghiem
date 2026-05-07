@@ -306,7 +306,7 @@ jobs:
               sleep 2
               
               # Run with Blockbench Desktop
-              node meg4_desktop.js pack/blueprints staging/meg4.zip
+              node meg4_web.js pack/blueprints staging/meg4.zip
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
