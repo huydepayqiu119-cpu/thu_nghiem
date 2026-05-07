@@ -259,39 +259,16 @@ jobs:
           echo "Extraction successful"
       - name: Install dependencies
         run: |
-          npm install puppeteer@24.15.0 adm-zip jszip
-      - name: Install Chrome dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libatk1.0-0 \
-            libatk-bridge2.0-0 \
-            libcups2 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxfixes3 \
-            libxrandr2 \
-            libgbm1 \
-            libpango-1.0-0 \
-            libcairo2 \
-            libasound2t64 \
-            libatspi2.0-0 \
-            libxshmfence1 \
-            libnss3 \
-            libnspr4 \
-            libdbus-1-3 \
-            libgtk-3-0
-      - name: Run MEG4 export
+          npm install adm-zip form-data
+      - name: Run MEG4 export via API
         run: |
           if [ -d "pack/blueprints" ]; then
             BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
             echo "Found $BBMODEL_COUNT .bbmodel files"
             
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
-              echo "Running MEG4 export..."
-              node meg4_web.js pack/blueprints staging/meg4.zip
+              echo "Running MEG4 export via API..."
+              node meg4_api_client.js pack/blueprints staging/meg4.zip http://thunder.pikamc.vn:25164/export
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
