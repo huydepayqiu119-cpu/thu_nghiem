@@ -244,7 +244,7 @@ jobs:
       - name: Setup Xvfb
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libgbm1 libasound2
+          sudo apt-get install -y xvfb libgbm1 libasound2t64
           sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
       - name: Install dependencies
         run: |
