@@ -241,23 +241,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Install Visual C++ Redistributable
-        shell: pwsh
-        run: |
-          Write-Host "Installing Visual C++ Redistributable..."
-          choco install vcredist-all -y --no-progress
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-1.49
-          restore-keys: |
-            ${{ runner.os }}-playwright-chromium-
       - name: Install dependencies
         shell: pwsh
         run: |
           npm install playwright adm-zip
-          npx playwright install chromium
       - name: Download and prepare pack
         shell: pwsh
         env:
@@ -275,20 +262,10 @@ jobs:
           # Extract
           Expand-Archive -Path input_pack.zip -DestinationPath pack -Force
           Write-Host "Extraction successful"
-      - name: Verify system dependencies
-        shell: pwsh
-        run: |
-          Write-Host "Checking system information..."
-          Get-ComputerInfo | Select-Object WindowsVersion, OsArchitecture
-          Write-Host "`nChecking installed Visual C++ runtimes..."
-          Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*Visual C++*" } | Select-Object DisplayName, DisplayVersion
-          Write-Host "`nChecking .NET Framework..."
-          Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full' | Select-Object Version, Release
       - name: Run meg4 export
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging
-          Write-Host "Starting meg4.js..."
           node meg4.js
         continue-on-error: true
       - name: Upload meg4 output
