@@ -241,11 +241,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Install dependencies
-        run: |
-          npm install adm-zip
       - name: Download and prepare pack
-        
         env:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
@@ -261,10 +257,39 @@ jobs:
           # Extract
           unzip -q input_pack.zip -d pack
           echo "Extraction successful"
-      - name: Run meg4 export
+      - name: Run meg4 export via API
+        env:
+          MEG4_API_URL: ${{ secrets.MEG4_API_URL }}
         run: |
           mkdir -p staging
-          node meg4_pure.js
+          
+          # Zip blueprints directory
+          if [ -d "pack/blueprints" ]; then
+            cd pack
+            zip -r ../blueprints.zip blueprints
+            cd ..
+            
+            # Call API
+            echo "Calling MEG4 API at ${MEG4_API_URL}..."
+            curl -X POST "${MEG4_API_URL}/api/meg4/export" \
+              -F "blueprints=@blueprints.zip" \
+              -o staging/meg4.zip \
+              --max-time 600 \
+              --retry 2 \
+              -v
+            
+            if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
+              echo "✓ MEG4 export completed successfully"
+              ls -lh staging/meg4.zip
+            else
+              echo "✗ MEG4 export failed or returned empty file"
+            fi
+            
+            # Cleanup
+            rm -f blueprints.zip
+          else
+            echo "No blueprints directory found, skipping MEG4 export"
+          fi
         continue-on-error: true
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
