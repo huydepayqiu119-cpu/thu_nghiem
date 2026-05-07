@@ -230,7 +230,7 @@ jobs:
     needs: get-pack-info
     permissions:
       contents: read
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -241,14 +241,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Setup Xvfb
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libgbm1 libasound2t64
-          sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
       - name: Install dependencies
         run: |
-          npm install playwright adm-zip
+          npm install puppeteer adm-zip
       - name: Download and prepare pack
         
         env:
@@ -267,10 +262,9 @@ jobs:
           unzip -q input_pack.zip -d pack
           echo "Extraction successful"
       - name: Run meg4 export
-        
         run: |
           mkdir -p staging
-          node meg4.js
+          node meg4_web.js
         continue-on-error: true
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
