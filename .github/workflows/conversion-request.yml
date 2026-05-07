@@ -241,14 +241,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: 'npm'
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-chromium-1.49
           restore-keys: |
-            ${{ runner.os }}-playwright-
+            ${{ runner.os }}-playwright-chromium-
       - name: Install dependencies
         shell: pwsh
         run: |
