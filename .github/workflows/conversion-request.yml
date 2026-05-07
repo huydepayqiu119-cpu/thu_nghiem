@@ -226,7 +226,7 @@ jobs:
           if-no-files-found: warn
           
   meg4-export:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: get-pack-info
     permissions:
       contents: read
@@ -242,21 +242,24 @@ jobs:
         with:
           node-version: 24
       - name: Install dependencies
+        shell: pwsh
         run: |
-          sudo apt-get update && sudo apt-get install -y --fix-missing xvfb mesa-utils libgl1-mesa-dri libglu1-mesa
           npm install playwright adm-zip
           npx playwright install chromium --with-deps
       - name: Download and prepare pack
+        shell: pwsh
         env:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
-          mkdir -p pack
-          curl -#L -o input_pack.zip "${PACK_URL}"
-          unzip -q input_pack.zip -d pack/
+          New-Item -ItemType Directory -Force -Path pack
+          Invoke-WebRequest -Uri $env:PACK_URL -OutFile input_pack.zip
+          Expand-Archive -Path input_pack.zip -DestinationPath pack -Force
       - name: Run meg4 export
+        shell: pwsh
         run: |
-          mkdir -p staging
-          xvfb-run --auto-servernum node meg4.js || echo "meg4 export failed, continuing..."
+          New-Item -ItemType Directory -Force -Path staging
+          node meg4.js
+        continue-on-error: true
       - name: Upload meg4 output
         uses: actions/upload-artifact@v4
         with:
