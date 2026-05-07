@@ -259,20 +259,17 @@ jobs:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
           New-Item -ItemType Directory -Force -Path pack
-          Write-Host "Downloading from: $env:PACK_URL"
-          Invoke-WebRequest -Uri $env:PACK_URL -OutFile input_pack.zip -UseBasicParsing
+          
+          # Fix Dropbox URL - change dl=0 to dl=1 for direct download
+          $downloadUrl = $env:PACK_URL -replace 'dl=0$', 'dl=1'
+          Write-Host "Downloading from: $downloadUrl"
+          
+          Invoke-WebRequest -Uri $downloadUrl -OutFile input_pack.zip -UseBasicParsing
           Write-Host "Downloaded file size: $((Get-Item input_pack.zip).Length) bytes"
           
-          # Try to extract
-          try {
-            Expand-Archive -Path input_pack.zip -DestinationPath pack -Force
-            Write-Host "Extraction successful"
-          } catch {
-            Write-Host "Expand-Archive failed, trying alternative method..."
-            # Fallback to .NET method
-            Add-Type -AssemblyName System.IO.Compression.FileSystem
-            [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\input_pack.zip", "$PWD\pack")
-          }
+          # Extract
+          Expand-Archive -Path input_pack.zip -DestinationPath pack -Force
+          Write-Host "Extraction successful"
       - name: Run meg4 export
         shell: pwsh
         run: |
