@@ -257,9 +257,7 @@ jobs:
           echo "Extraction successful"
       - name: Install dependencies
         run: |
-          cd tools
           npm install adm-zip node-fetch@2
-          cd ..
       - name: Run MEG4 export via Beta EXE API
         env:
           BETA_EXE_API: ${{ secrets.BETA_EXE_API || 'http://localhost:45678' }}
@@ -271,7 +269,7 @@ jobs:
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
               echo "Running MEG4 export via Beta EXE API..."
               echo "API endpoint: $BETA_EXE_API"
-              node tools/meg4_api_client.js pack/blueprints staging/meg4.zip
+              node meg4_api_client.js pack/blueprints staging/meg4.zip
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
@@ -372,7 +370,6 @@ jobs:
           mkdir -p staging/other
           cp kaito.sh staging/
           cp *.py staging/
-          cp meg4.js staging/
           cp other/*.py staging/other/
           cp other/list.json staging/other/
           mkdir -p staging/animations
