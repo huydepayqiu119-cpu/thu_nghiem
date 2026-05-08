@@ -247,31 +247,29 @@ jobs:
         run: |
           mkdir -p pack staging
           
-          # Fix Dropbox URL
           downloadUrl="${PACK_URL/dl=0/dl=1}"
           echo "Downloading from: $downloadUrl"
           
           curl -L "$downloadUrl" -o input_pack.zip
           echo "Downloaded file size: $(stat -c%s input_pack.zip) bytes"
           
-          # Extract
           unzip -q input_pack.zip -d pack
           echo "Extraction successful"
       - name: Install dependencies
         run: |
-          npm install adm-zip puppeteer
-      - name: Install Puppeteer Chromium
-        run: |
-          npx puppeteer browsers install chrome
-      - name: Run MEG4 export with Puppeteer
+          npm install adm-zip node-fetch
+      - name: Run MEG4 export via Beta EXE API
+        env:
+          BETA_EXE_API: ${{ secrets.BETA_EXE_API || 'http://localhost:45678' }}
         run: |
           if [ -d "pack/blueprints" ]; then
             BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
             echo "Found $BBMODEL_COUNT .bbmodel files"
             
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
-              echo "Running MEG4 export with Puppeteer..."
-              node meg4_web.js pack/blueprints staging/meg4.zip
+              echo "Running MEG4 export via Beta EXE API..."
+              echo "API endpoint: $BETA_EXE_API"
+              node meg4_api_client.js pack/blueprints staging/meg4.zip
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
