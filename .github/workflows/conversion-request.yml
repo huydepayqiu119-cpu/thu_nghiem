@@ -259,16 +259,17 @@ jobs:
           echo "Extraction successful"
       - name: Install dependencies
         run: |
-          npm install adm-zip form-data
-      - name: Run MEG4 export via API
+          npm install adm-zip
+      - name: Run MEG4 export with Blockbench Desktop
         run: |
           if [ -d "pack/blueprints" ]; then
             BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
             echo "Found $BBMODEL_COUNT .bbmodel files"
             
             if [ "$BBMODEL_COUNT" -gt 0 ]; then
-              echo "Running MEG4 export via API..."
-              node meg4_api_client.js pack/blueprints staging/meg4.zip http://thunder.pikamc.vn:25166/export
+              echo "Running MEG4 export with Blockbench Desktop..."
+              chmod +x meg4_github_actions.js
+              node meg4_github_actions.js pack/blueprints staging/meg4.zip
               
               if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
                 echo "✓ MEG4 export completed successfully"
