@@ -224,74 +224,7 @@ jobs:
           path: staging/target/rp/textures/
           retention-days: 1
           if-no-files-found: warn
-          
-  meg4-export:
-    runs-on: self-hosted
-    needs: get-pack-info
-    permissions:
-      contents: read
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: huydepayqiu119-cpu/tools-thu-nghiem
-          token: ${{ secrets.TOOLS_PAT }}
-          fetch-depth: 1
-      - name: Install NodeJS
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - name: Download and prepare pack
-        env:
-          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
-        run: |
-          mkdir -p pack staging
-          
-          downloadUrl="${PACK_URL/dl=0/dl=1}"
-          echo "Downloading from: $downloadUrl"
-          
-          curl -L "$downloadUrl" -o input_pack.zip
-          echo "Downloaded file size: $(stat -c%s input_pack.zip) bytes"
-          
-          unzip -q input_pack.zip -d pack
-          echo "Extraction successful"
-      - name: Install dependencies
-        run: |
-          npm install adm-zip node-fetch@2
-      - name: Run MEG4 export via Beta EXE API
-        env:
-          BETA_EXE_API: ${{ secrets.BETA_EXE_API || 'http://localhost:45678' }}
-        run: |
-          if [ -d "pack/blueprints" ]; then
-            BBMODEL_COUNT=$(find pack/blueprints -name "*.bbmodel" | wc -l)
-            echo "Found $BBMODEL_COUNT .bbmodel files"
-            
-            if [ "$BBMODEL_COUNT" -gt 0 ]; then
-              echo "Running MEG4 export via Beta EXE API..."
-              echo "API endpoint: $BETA_EXE_API"
-              node meg4_api_client.js pack/blueprints staging/meg4.zip
-              
-              if [ -f "staging/meg4.zip" ] && [ -s "staging/meg4.zip" ]; then
-                echo "✓ MEG4 export completed successfully"
-                ls -lh staging/meg4.zip
-              else
-                echo "✗ MEG4 export failed"
-              fi
-            else
-              echo "No .bbmodel files found"
-            fi
-          else
-            echo "No blueprints directory found"
-          fi
-        continue-on-error: true
-      - name: Upload meg4 output
-        uses: actions/upload-artifact@v4
-        with:
-          name: meg4-output
-          path: staging/meg4.zip
-          retention-days: 1
-          if-no-files-found: warn
-
+        
   convert-pack:
     runs-on: ubuntu-latest
     needs: [get-pack-info, meg4-export]
@@ -418,7 +351,6 @@ jobs:
             staging/README.md
             staging/items.zip
             staging/DisplayEntity (README)/**
-            staging/meg4_debug_*.png
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
