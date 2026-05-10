@@ -343,7 +343,7 @@ jobs:
             staging/contents.zip
             staging/README.md
             staging/items.zip
-            staging/DisplayEntity (README)/**
+            DisplayEntity (README)/**
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
