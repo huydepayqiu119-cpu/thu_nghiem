@@ -258,12 +258,6 @@ jobs:
           sudo apt-get install -y moreutils zip unzip imagemagick
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
-      - name: Download meg4 output
-        uses: actions/download-artifact@v4
-        with:
-          name: meg4-output
-          path: staging/
-        continue-on-error: true
       - name: Convert Pack
         id: convert-pack
         continue-on-error: false
@@ -347,7 +341,6 @@ jobs:
             staging/bedrock/
             staging/*.json
             staging/contents.zip
-            staging/meg4.zip
             staging/README.md
             staging/items.zip
             staging/DisplayEntity (README)/**
