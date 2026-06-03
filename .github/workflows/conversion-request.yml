@@ -304,6 +304,7 @@ jobs:
           cp animations/anim_3d.py staging/animations/
           mkdir -p staging/tools
           cp -r tools/* staging/tools/
+          cp -r util staging/util/
           cd staging
           chmod +x kaito.sh
           COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o input_pack.zip "${PACK_URL}"
@@ -340,10 +341,6 @@ jobs:
             staging/campfire.log
             staging/bedrock/
             staging/*.json
-            staging/contents.zip
-            staging/README.md
-            staging/items.zip
-            staging/DisplayEntity (README)/**
       - name: Delete generated-icons artifact
         uses: geekyeggo/delete-artifact@v5
         with:
