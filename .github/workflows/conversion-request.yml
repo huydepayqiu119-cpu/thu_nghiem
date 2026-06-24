@@ -337,6 +337,7 @@ jobs:
         with:
           name: Bedrock-${{ github.event.issue.number }}
           path: |
+            staging/DisplayEntity (README)/plugins
             staging/*.mcpack
             staging/campfire.log
             staging/bedrock/
