@@ -193,7 +193,7 @@ jobs:
           fi
       - name: Run item_rename to normalize paths
         run: |
-          python other/item_rename.py || echo "item_rename skipped (no config.json yet)"
+          ASSETS_ROOT=$GITHUB_WORKSPACE/pack_extracted/assets python other/item_rename.py
       - name: Repack normalized pack
         run: |
           cd pack_extracted
