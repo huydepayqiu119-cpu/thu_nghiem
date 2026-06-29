@@ -183,8 +183,7 @@ jobs:
         run: |
           curl -fsSL -o input_pack.zip "${PACK_URL}"
           mkdir -p pack_extracted
-          unzip -q input_pack.zip -d pack_extracted/
-          # If assets/ is nested inside a subfolder, flatten it
+          unzip -q input_pack.zip -d pack_extracted/ || [ $? -le 1 ]
           if [ ! -d "pack_extracted/assets" ]; then
             SUBDIR=$(find pack_extracted -maxdepth 1 -mindepth 1 -type d | head -1)
             if [ -n "$SUBDIR" ] && [ -d "$SUBDIR/assets" ]; then
