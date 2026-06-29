@@ -182,21 +182,21 @@ jobs:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
           curl -fsSL -o input_pack.zip "${PACK_URL}"
-          mkdir -p pack_extracted
-          unzip -q input_pack.zip -d pack_extracted/ || [ $? -le 1 ]
-          if [ ! -d "pack_extracted/assets" ]; then
-            SUBDIR=$(find pack_extracted -maxdepth 1 -mindepth 1 -type d | head -1)
+          mkdir -p pack
+          unzip -q input_pack.zip -d pack/ || [ $? -le 1 ]
+          if [ ! -d "pack/assets" ]; then
+            SUBDIR=$(find pack -maxdepth 1 -mindepth 1 -type d | head -1)
             if [ -n "$SUBDIR" ] && [ -d "$SUBDIR/assets" ]; then
-              mv "$SUBDIR"/* pack_extracted/ 2>/dev/null || true
+              mv "$SUBDIR"/* pack/ 2>/dev/null || true
               rmdir "$SUBDIR" 2>/dev/null || true
             fi
           fi
       - name: Run item_rename to normalize paths
         run: |
-          ASSETS_ROOT=$GITHUB_WORKSPACE/pack_extracted/assets python other/item_rename.py
+          ASSETS_ROOT=$GITHUB_WORKSPACE/pack/assets python other/item_rename.py
       - name: Repack normalized pack
         run: |
-          cd pack_extracted
+          cd pack
           zip -qr ../validated_pack.zip .
           cd ..
       - name: Upload validated pack
