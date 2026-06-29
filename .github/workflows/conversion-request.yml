@@ -161,9 +161,46 @@ jobs:
           echo "JSON_UNICODE_CONVERSION=$(jq -r '.json_unicode_conversion' inputs.json)" >> $GITHUB_OUTPUT
           echo "ENCRYPT_PACK=$(jq -r '.encrypt_pack' inputs.json)" >> $GITHUB_OUTPUT
           
-  generate-icons:
+  validate-pack:
     runs-on: ubuntu-latest
     needs: get-pack-info
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: huydepayqiu119-cpu/tools-thu-nghiem
+          token: ${{ secrets.TOOLS_PAT }}
+          fetch-depth: 1
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download and extract pack
+        env:
+          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
+        run: |
+          curl -#L -o input_pack.zip "${PACK_URL}"
+          unzip -q input_pack.zip -d pack_extracted/
+      - name: Run item_rename to normalize paths
+        run: |
+          python other/item_rename.py || echo "item_rename skipped (no config.json yet)"
+      - name: Repack normalized pack
+        run: |
+          cd pack_extracted
+          zip -qr ../validated_pack.zip .
+          cd ..
+      - name: Upload validated pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-pack
+          path: validated_pack.zip
+          retention-days: 1
+
+  generate-icons:
+    runs-on: ubuntu-latest
+    needs: [get-pack-info, validate-pack]
     permissions:
       contents: read
     timeout-minutes: 30
@@ -192,13 +229,14 @@ jobs:
       - name: Install Puppeteer Chromium
         run: |
           npx puppeteer browsers install chrome
-      - name: Download and prepare pack
-        env:
-          PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
+      - name: Download validated pack
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-pack
+      - name: Prepare pack
         run: |
           mkdir -p pack
-          curl -#L -o input_pack.zip "${PACK_URL}"
-          unzip -q input_pack.zip -d pack/
+          unzip -q validated_pack.zip -d pack/
       - name: Generate icons
         run: |
           mkdir -p staging/target/rp/textures
@@ -227,7 +265,7 @@ jobs:
         
   convert-pack:
     runs-on: ubuntu-latest
-    needs: get-pack-info
+    needs: [get-pack-info, validate-pack]
     permissions:
       contents: read
     timeout-minutes: 90
@@ -258,6 +296,10 @@ jobs:
           sudo apt-get install -y moreutils zip unzip imagemagick
           yarn global add spritesheet-js
           pip install Pillow requests jproperties pyyaml
+      - name: Download validated pack
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-pack
       - name: Convert Pack
         id: convert-pack
         continue-on-error: false
@@ -307,7 +349,7 @@ jobs:
           cp -r util staging/util/
           cd staging
           chmod +x kaito.sh
-          COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o input_pack.zip "${PACK_URL}"
+          mv ../validated_pack.zip input_pack.zip
           MERGE_PACK_FILE="${MERGE_PACK_URL}"
           if [ "${MERGE_PACK_URL}" != "null" ]; then
             COLUMNS=$COLUMNS-1 curl --no-styled-output -#L -o merge_pack.zip "${MERGE_PACK_URL}"
