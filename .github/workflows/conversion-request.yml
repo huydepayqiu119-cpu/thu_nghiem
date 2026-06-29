@@ -181,8 +181,17 @@ jobs:
         env:
           PACK_URL: ${{ needs.get-pack-info.outputs.pack_url }}
         run: |
-          curl -#L -o input_pack.zip "${PACK_URL}"
+          curl -fsSL -o input_pack.zip "${PACK_URL}"
+          mkdir -p pack_extracted
           unzip -q input_pack.zip -d pack_extracted/
+          # If assets/ is nested inside a subfolder, flatten it
+          if [ ! -d "pack_extracted/assets" ]; then
+            SUBDIR=$(find pack_extracted -maxdepth 1 -mindepth 1 -type d | head -1)
+            if [ -n "$SUBDIR" ] && [ -d "$SUBDIR/assets" ]; then
+              mv "$SUBDIR"/* pack_extracted/ 2>/dev/null || true
+              rmdir "$SUBDIR" 2>/dev/null || true
+            fi
+          fi
       - name: Run item_rename to normalize paths
         run: |
           python other/item_rename.py || echo "item_rename skipped (no config.json yet)"
